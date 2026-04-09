@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Cacciaparole</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      background: #08091a;
+      color: #fff;
+      user-select: none;
+    }
+
+    /* Animated deep background */
+    #bg-gradient {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #08091a 0%, #0f102e 40%, #0b1226 70%, #070818 100%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    #bg-gradient::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(80, 120, 255, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 70%, rgba(150, 80, 255, 0.07) 0%, transparent 60%);
+      animation: bgPulse 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes bgPulse {
+      from {
+        opacity: 0.6;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* ── COUNTDOWN OVERLAY (3-2-1) ──────────────── */
+    #countdown-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+      pointer-events: none;
+    }
+
+    #countdown-overlay.active {
+      display: flex;
+    }
+
+    #countdown-num {
+      font-size: clamp(120px, 30vw, 240px);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 60px rgba(120, 180, 255, 0.9), 0 0 120px rgba(80, 140, 255, 0.5);
+      opacity: 0;
+      transform: scale(1.6);
+      letter-spacing: -4px;
+    }
+
+    /* ── START PROMPT ────────────────────────────── */
+    #start-prompt {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      pointer-events: all;
+      cursor: pointer;
+    }
+
+    #start-prompt-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 32px 50px;
+      background: rgba(10, 12, 30, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      animation: promptFloat 3s ease-in-out infinite;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    @keyframes promptFloat {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+
+    .prompt-dice {
+      font-size: 52px;
+      filter: drop-shadow(0 0 16px rgba(120, 180, 255, 0.6));
+    }
+
+    .prompt-title {
+      font-size: clamp(22px, 5vw, 34px);
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+
+    .prompt-sub {
+      font-size: clamp(12px, 2.5vw, 15px);
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.45);
+      letter-spacing: 0.5px;
+    }
+
+    .prompt-key {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.35);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .key-badge {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+    }
+
+    .prompt-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ── TIMER (top center) ───────────────────────── */
+    #timer-display {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(30px, 7vw, 58px);
+      font-weight: 900;
+      letter-spacing: 4px;
+      color: #fff;
+      text-shadow: 0 2px 20px rgba(100, 180, 255, 0.5);
+      display: none;
+      z-index: 40;
+      pointer-events: none;
+      transition: color 0.5s, text-shadow 0.5s;
+    }
+
+    #timer-display.warning {
+      color: #ff5050;
+      text-shadow: 0 2px 30px rgba(255, 80, 80, 0.8);
+      animation: timerPulse 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes timerPulse {
+      from {
+        opacity: 1;
+      }
+
+      to {
+        opacity: 0.6;
+      }
+    }
+
+    /* ── END-GAME VEIL (blur + dark) ─────────────── */
+    #veil {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      z-index: 35;
+      background: rgba(5, 6, 20, 0.82);
+      backdrop-filter: blur(28px) saturate(0.4);
+      pointer-events: none;
+    }
+
+    #veil.active {
+      display: flex;
+    }
+
+    #veil-icon {
+      font-size: 56px;
+      filter: brightness(0) invert(1);
+    }
+
+    #veil-text {
+      font-size: clamp(22px, 6vw, 36px);
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #fff;
+      text-shadow: 0 0 30px rgba(255, 80, 80, 0.6);
+    }
+
+    #veil-subtext {
+      font-size: clamp(11px, 2.5vw, 14px);
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.45);
+      letter-spacing: 0.5px;
+    }
+
+    /* ── CONTROL BAR ─────────────────────────────── */
+    #control-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 10px 16px 14px;
+      background: rgba(8, 9, 26, 0.7);
+      backdrop-filter: blur(20px) saturate(1.4);
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.8);
+      border-radius: 12px;
+      padding: 9px 16px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: background 0.2s, border-color 0.2s, transform 0.12s, box-shadow 0.2s;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(255, 255, 255, 0.11);
+      border-color: rgba(255, 255, 255, 0.22);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+
+    .ctrl-btn:active {
+      transform: scale(0.93);
+    }
+
+    .ctrl-btn.primary {
+      background: linear-gradient(135deg, #4f7df5 0%, #7b52f0 100%);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(80, 120, 255, 0.35);
+    }
+
+    .ctrl-btn.primary:hover {
+      filter: brightness(1.14);
+      box-shadow: 0 6px 24px rgba(80, 120, 255, 0.5);
+    }
+
+    /* ── WORD VERIFIER ───────────────────────────── */
+    #word-verifier {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      max-width: 420px;
+    }
+
+    #word-verifier.visible {
+      display: flex;
+    }
+
+    #word-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      border-radius: 12px;
+      padding: 9px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s;
+      pointer-events: all;
+    }
+
+    #word-input::placeholder {
+      color: rgba(255, 255, 255, 0.28);
+      font-weight: 400;
+    }
+
+    #word-input:focus {
+      border-color: rgba(100, 160, 255, 0.55);
+    }
+
+    #btn-verify {
+      position: relative;
+      overflow: visible;
+    }
+
+    #pt-badge {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: #f5a623;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 20px;
+      padding: 1px 7px;
+      pointer-events: none;
+      display: none;
+      box-shadow: 0 2px 8px rgba(245, 166, 35, 0.5);
+    }
+
+    /* ── RESULT BADGE ────────────────────────────── */
+    #word-result {
+      display: none;
+      position: fixed;
+      top: 86px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 26px;
+      border-radius: 50px;
+      font-size: clamp(13px, 3vw, 16px);
+      font-weight: 700;
+      z-index: 45;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    #word-result.found {
+      background: linear-gradient(135deg, #00c87a, #009e60);
+      box-shadow: 0 4px 24px rgba(0, 200, 120, 0.4);
+    }
+
+    #word-result.notfound {
+      background: linear-gradient(135deg, #e84040, #c01818);
+      box-shadow: 0 4px 24px rgba(220, 50, 50, 0.4);
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-14px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    #word-result.found,
+    #word-result.notfound {
+      animation: slideDown 0.25s ease;
+    }
+
+    /* ── SCORE MODAL ─────────────────────────────── */
+    #score-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 70;
+      background: rgba(5, 5, 18, 0.7);
+      backdrop-filter: blur(8px);
+    }
+
+    #score-modal.open {
+      display: flex;
+    }
+
+    #score-card {
+      background: linear-gradient(160deg, #131630 0%, #0e1128 100%);
+      border: 1px solid rgba(100, 140, 255, 0.2);
+      border-radius: 24px;
+      padding: 32px 38px;
+      min-width: 290px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    }
+
+    #score-card h2 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: #fff;
+      text-align: center;
+    }
+
+    #score-card table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    #score-card td {
+      padding: 9px 12px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    #score-card td:last-child {
+      text-align: right;
+      font-weight: 700;
+      color: #82b8ff;
+    }
+
+    #score-card tr:not(:last-child) td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    #score-card .score-note {
+      margin-top: 18px;
+      font-size: 11px;
+      color: rgba(170, 196, 255, 0.4);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    #score-card .close-score {
+      margin-top: 22px;
+      width: 100%;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.2s;
+    }
+
+    #score-card .close-score:hover {
+      background: rgba(255, 255, 255, 0.11);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="bg-gradient"></div>
+  <div id="canvas-container"></div>
+
+  <!-- 3-2-1 countdown -->
+  <div id="countdown-overlay">
+    <span id="countdown-num"></span>
+  </div>
+
+  <!-- Start prompt (visible while shaking) -->
+  <div id="start-prompt">
+    <div id="start-prompt-inner">
+      <div class="prompt-dice">🎲</div>
+      <div class="prompt-title">Cacciaparole</div>
+      <div class="prompt-sub">Tocca per mescolare e iniziare</div>
+      <div class="prompt-key">
+        <div class="key-badge">SPAZIO</div>
+        <div class="prompt-dot"></div>
+        <span>o tocca lo schermo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timer -->
+  <div id="timer-display">03:00</div>
+
+  <!-- Veil -->
+  <div id="veil">
+    <div id="veil-icon">⏱</div>
+    <div id="veil-text">TEMPO SCADUTO!</div>
+    <div id="veil-subtext">Premi SPAZIO per rivelare / nascondere le lettere</div>
+  </div>
+
+  <!-- Control bar -->
+  <div id="control-bar">
+    <button class="ctrl-btn primary" id="btn-shuffle">🎲 Mescola</button>
+    <div id="word-verifier">
+      <input id="word-input" type="text" placeholder="Verifica parola…" autocomplete="off" autocorrect="off"
+        spellcheck="false" />
+      <button class="ctrl-btn primary" id="btn-verify">
+        Verifica
+        <span id="pt-badge"></span>
+      </button>
+    </div>
+    <button class="ctrl-btn" id="btn-rotate" title="Ruota la plancia di 90°">↻ Ruota</button>
+    <button class="ctrl-btn" id="btn-fullscreen" title="Schermo intero">⛶</button>
+    <button class="ctrl-btn" id="btn-score">? Punti</button>
+  </div>
+
+  <!-- Score modal -->
+  <div id="score-modal">
+    <div id="score-card">
+      <h2>🏆 Tabella Punteggi</h2>
+      <table>
+        <tr>
+          <td>4 lettere</td>
+          <td>1 pt</td>
+        </tr>
+        <tr>
+          <td>5 lettere</td>
+          <td>2 pt</td>
+        </tr>
+        <tr>
+          <td>6 lettere</td>
+          <td>3 pt</td>
+        </tr>
+        <tr>
+          <td>7 lettere</td>
+          <td>5 pt</td>
+        </tr>
+        <tr>
+          <td>8+ lettere</td>
+          <td>11 pt</td>
+        </tr>
+      </table>
+      <div class="score-note">
+        Parole uguali tra giocatori si annullano.<br>
+        Singolare e plurale contano separatamente.
+      </div>
+      <button class="close-score" id="close-score-btn">Chiudi</button>
+    </div>
+  </div>
+
+  <!-- Result badge -->
+  <div id="word-result"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script>
+    /* ═══════════════════════════════════════════════════════
+       Cacciaparole — Premium Edition
+       ═══════════════════════════════════════════════════════ */
+
+    // ── 25 DICE (Italian frequency distribution) ─────────────────────────────
+    const DADI = [
+      ["A", "A", "E", "E", "G", "N"], ["E", "L", "R", "T", "T", "V"], ["A", "O", "O", "T", "T", "U"],
+      ["A", "B", "B", "C", "O", "O"], ["E", "E", "R", "T", "V", "Z"], ["C", "I", "M", "O", "T", "U"],
+      ["D", "I", "S", "T", "T", "E"], ["E", "I", "O", "S", "S", "T"], ["D", "E", "L", "R", "V", "QU"],
+      ["A", "C", "F", "O", "P", "S"], ["F", "I", "M", "N", "P", "U"], ["E", "E", "I", "N", "S", "U"],
+      ["E", "E", "G", "L", "N", "M"], ["A", "F", "F", "C", "P", "S"], ["I", "L", "N", "N", "R", "Z"],
+      ["D", "E", "I", "L", "R", "C"], ["A", "D", "E", "L", "R", "T"], ["A", "E", "O", "O", "T", "T"],
+      ["E", "I", "O", "S", "S", "T"], ["C", "E", "I", "P", "S", "T"], ["B", "C", "O", "O", "T", "U"],
+      ["E", "M", "T", "T", "I", "S"], ["A", "G", "M", "O", "R", "S"], ["A", "I", "P", "R", "S", "V"],
+      ["A", "E", "U", "E", "E", "O"]
+    ];
+
+    // ── CONSTANTS ─────────────────────────────────────────────────────────────
+    const GRID = 5;
+    const DSIZ = 1.05;   // dice visual size
+    const GAP = 1.38;   // spacing between dice centers
+    const OX = -((GRID - 1) * GAP) / 2;  // grid origin X
+    const OZ = -((GRID - 1) * GAP) / 2;  // grid origin Z
+
+    // ── STATE ─────────────────────────────────────────────────────────────────
+    let gridLetters = [];
+    let diceMeshes = [];
+    let shakePositions = [];
+    let shakeVelocities = [];
+    let settledPositions = [];
+    let timerInterval = null;
+    let timerRunning = false;
+    let timeLeft = 180;
+    let gameOver = false;
+    let veilVisible = false;
+    let gamePhase = 'idle';   // 'idle' | 'shaking' | 'settling' | 'playing' | 'over'
+    let boardRotationY = 0;           // cumulative board rotation (radians)
+    let audioCtx = null;
+
+    // ── SCENE ─────────────────────────────────────────────────────────────────
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x08091a);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0, 18, 16);
+    camera.lookAt(0, 0, 0);
+
+    // Camera positioned so that 5x5 grid fills most of the canvas
+    function calcCameraY() {
+      // fov-based math: visible height at distance y = 2 * tan(fovRad/2) * y
+      const fovRad = camera.fov * Math.PI / 180;
+      const gridExtent = (GRID - 1) * GAP / 2 + DSIZ; // half-size of grid
+      const aspect = window.innerWidth / window.innerHeight;
+      const yForHeight = gridExtent / Math.tan(fovRad / 2) * 1.18;
+      const yForWidth = (gridExtent / aspect) / Math.tan(fovRad / 2) * 1.18;
+      return Math.max(yForHeight, yForWidth);
+    }
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0xaac0ff, 0.65));
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    dirLight.position.set(6, 18, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.set(1024, 1024);
+    scene.add(dirLight);
+
+    const ptLight1 = new THREE.PointLight(0x6688ff, 0.6, 60);
+    ptLight1.position.set(-8, 12, -8);
+    scene.add(ptLight1);
+    const ptLight2 = new THREE.PointLight(0xff88aa, 0.2, 40);
+    ptLight2.position.set(10, 6, 10);
+    scene.add(ptLight2);
+
+    // Ground
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(60, 60),
+      new THREE.MeshStandardMaterial({ color: 0x08091a, roughness: 1 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -DSIZ / 2 - 0.02;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Glass box (for shaking phase) — visible frosted-glass case
+    const BOX_W = GRID * GAP + 1.2;
+    const BOX_H = 4.8;
+    const GLASS_OPACITY = 0.22;
+
+    // Two materials per wall for a richer glass look:
+    // glassMat = frosted interior surface
+    // glassEdgeMat = thin bright edge outline
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xaaccff,
+      transparent: true,
+      opacity: GLASS_OPACITY,
+      roughness: 0.04,
+      metalness: 0.05,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      envMapIntensity: 1.2,
+    });
+
+    // Separate edge-glow material (thin strips along wall edges)
+    const glassEdgeMat = new THREE.MeshBasicMaterial({
+      color: 0x88bbff,
+      transparent: true,
+      opacity: 0.55,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+
+    const glassGroup = new THREE.Group();
+    scene.add(glassGroup);
+
+    function addPanel(w, h, d, px, py, pz) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), glassMat);
+      m.position.set(px, py, pz);
+      glassGroup.add(m);
+    }
+    function addEdge(w, h, d, px, py, pz) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), glassEdgeMat);
+      m.position.set(px, py, pz);
+      glassGroup.add(m);
+    }
+
+    const hw = BOX_W / 2 + 0.08, hy = BOX_H / 2 - 0.4;
+    // Walls
+    addPanel(BOX_W, BOX_H, 0.12, 0, hy, hw);
+    addPanel(BOX_W, BOX_H, 0.12, 0, hy, -hw);
+    addPanel(0.12, BOX_H, BOX_W, -hw, hy, 0);
+    addPanel(0.12, BOX_H, BOX_W, hw, hy, 0);
+    // Glass floor base
+    addPanel(BOX_W + 0.16, 0.10, BOX_W + 0.16, 0, -0.05, 0);
+    // Top lid rim
+    addEdge(BOX_W + 0.16, 0.06, BOX_W + 0.16, 0, BOX_H - 0.4, 0);
+    // Vertical corner edges (8 corners)
+    const ce = 0.10, cf = BOX_W / 2 + 0.08;
+    addEdge(ce, BOX_H, ce, -cf, hy, -cf);
+    addEdge(ce, BOX_H, ce, cf, hy, -cf);
+    addEdge(ce, BOX_H, ce, -cf, hy, cf);
+    addEdge(ce, BOX_H, ce, cf, hy, cf);
+
+    // Interior light that makes the glass glow
+    const boxLight = new THREE.PointLight(0x90b8ff, 0.55, 14);
+    boxLight.position.set(0, 2, 0);
+    scene.add(boxLight);
+
+    // ── TEXTURES ──────────────────────────────────────────────────────────────
+    function makeLetterTex(letter) {
+      const sz = 256, cv = document.createElement('canvas');
+      cv.width = cv.height = sz;
+      const ctx = cv.getContext('2d');
+      const up = letter.toUpperCase();
+      const isQu = up === 'QU', isZ = up === 'Z';
+
+      // Rounded background
+      const r = 30;
+      ctx.fillStyle = '#f4efe4';
+      ctx.beginPath();
+      ctx.moveTo(r, 0); ctx.lineTo(sz - r, 0); ctx.quadraticCurveTo(sz, 0, sz, r);
+      ctx.lineTo(sz, sz - r); ctx.quadraticCurveTo(sz, sz, sz - r, sz);
+      ctx.lineTo(r, sz); ctx.quadraticCurveTo(0, sz, 0, sz - r);
+      ctx.lineTo(0, r); ctx.quadraticCurveTo(0, 0, r, 0); ctx.fill();
+
+      // Subtle inner shadow bottom
+      const grad = ctx.createLinearGradient(0, sz * 0.8, 0, sz);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.07)');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, sz, sz);
+
+      // Dot pattern (subtle)
+      ctx.fillStyle = 'rgba(0,0,0,0.025)';
+      for (let dx = 20; dx < sz; dx += 28) for (let dy = 20; dy < sz; dy += 28) {
+        ctx.beginPath(); ctx.arc(dx, dy, 1.5, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Letter
+      ctx.fillStyle = '#1a1b2e';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = `bold ${isQu ? 74 : 106}px Inter, Arial`;
+      ctx.fillText(up, sz / 2, sz / 2 - (isZ ? 6 : 0));
+
+      // Underline for Z
+      if (isZ) {
+        ctx.strokeStyle = '#1a1b2e'; ctx.lineWidth = 8; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(sz * 0.27, sz * 0.63); ctx.lineTo(sz * 0.73, sz * 0.63); ctx.stroke();
+      }
+      return new THREE.CanvasTexture(cv);
+    }
+
+    const blankTex = (() => {
+      const sz = 256, cv = document.createElement('canvas'); cv.width = cv.height = sz;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#ede8da';
+      const r = 30;
+      ctx.beginPath();
+      ctx.moveTo(r, 0); ctx.lineTo(sz - r, 0); ctx.quadraticCurveTo(sz, 0, sz, r);
+      ctx.lineTo(sz, sz - r); ctx.quadraticCurveTo(sz, sz, sz - r, sz);
+      ctx.lineTo(r, sz); ctx.quadraticCurveTo(0, sz, 0, sz - r);
+      ctx.lineTo(0, r); ctx.quadraticCurveTo(0, 0, r, 0); ctx.fill();
+      return new THREE.CanvasTexture(cv);
+    })();
+
+    function makeDiceMats(letter) {
+      const top = makeLetterTex(letter);
+      const mk = tex => new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 });
+      return [mk(blankTex), mk(blankTex), mk(top), mk(blankTex), mk(blankTex), mk(blankTex)];
+    }
+
+    // ── GRID INIT ─────────────────────────────────────────────────────────────
+    function initGrid() {
+      diceMeshes.forEach(m => { m.geometry.dispose(); scene.remove(m); });
+      diceMeshes = []; gridLetters = [];
+      shakePositions = []; shakeVelocities = []; settledPositions = [];
+
+      const shuffled = [...DADI].sort(() => Math.random() - 0.5);
+
+      for (let i = 0; i < 25; i++) {
+        const die = shuffled[i];
+        const letter = die[Math.floor(Math.random() * die.length)];
+        gridLetters.push(letter);
+
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(DSIZ, DSIZ, DSIZ), makeDiceMats(letter));
+        mesh.castShadow = mesh.receiveShadow = true;
+
+        const col = i % GRID, row = Math.floor(i / GRID);
+        const settledPos = new THREE.Vector3(OX + col * GAP, 0, OZ + row * GAP);
+        settledPositions.push(settledPos);
+
+        mesh.position.copy(settledPos);
+        mesh.rotation.set(0, 0, 0);
+
+        shakePositions.push(new THREE.Vector3());
+        shakeVelocities.push(new THREE.Vector3());
+
+        scene.add(mesh); diceMeshes.push(mesh);
+      }
+    }
+
+    function rollNewLetters() {
+      const shuffled = [...DADI].sort(() => Math.random() - 0.5);
+      for (let i = 0; i < 25; i++) {
+        const die = shuffled[i];
+        const letter = die[Math.floor(Math.random() * die.length)];
+        gridLetters[i] = letter;
+        diceMeshes[i].material.forEach(mat => {
+          if (mat.map && mat.map !== blankTex) mat.map.dispose();
+          mat.dispose();
+        });
+        diceMeshes[i].material = makeDiceMats(letter);
+      }
+    }
+
+    // ── PHYSICS BOUNDS ────────────────────────────────────────────────────────
+    const BXYZ = (BOX_W - DSIZ * 1.6) / 2;
+    const BY_HI = BOX_H - DSIZ * 0.866 - 0.1;
+    const BY_LO = DSIZ * 0.866;
+
+    let shakeStart = null;
+
+    function tickShaking(ts) {
+      if (!shakeStart) shakeStart = ts;
+      diceMeshes.forEach((mesh, i) => {
+        const vel = shakeVelocities[i], pos = shakePositions[i];
+        const timeOffset = ts * 0.005 + i;
+        vel.x += (Math.sin(timeOffset) * 0.02) + (Math.random() - 0.5) * 0.03;
+        vel.y += (Math.cos(timeOffset * 1.2) * 0.02) + (Math.random() - 0.5) * 0.03;
+        vel.z += (Math.sin(timeOffset * 0.8) * 0.02) + (Math.random() - 0.5) * 0.03;
+        vel.multiplyScalar(0.95);
+        pos.add(vel);
+        if (pos.x > BXYZ) { pos.x = BXYZ; vel.x *= -0.68; }
+        if (pos.x < -BXYZ) { pos.x = -BXYZ; vel.x *= -0.68; }
+        if (pos.z > BXYZ) { pos.z = BXYZ; vel.z *= -0.68; }
+        if (pos.z < -BXYZ) { pos.z = -BXYZ; vel.z *= -0.68; }
+        if (pos.y > BY_HI) { pos.y = BY_HI; vel.y *= -0.68; }
+        if (pos.y < BY_LO) { pos.y = BY_LO; vel.y *= -0.68; }
+        mesh.position.copy(pos);
+        mesh.rotation.x += vel.x * 1.3;
+        mesh.rotation.y += vel.y * 1.3;
+        mesh.rotation.z += vel.z * 0.9;
+      });
+    }
+
+    // ── SETTLE + CAMERA FLY-DOWN ─────────────────────────────────────────────
+    function settleAndZoom(onDone) {
+      gamePhase = 'settling';
+      diceMeshes.forEach((mesh, i) => {
+        const t = settledPositions[i];
+        const delay = 0.1 + Math.random() * 0.35; // Staggered drop
+        gsap.to(mesh.position, { x: t.x, z: t.z, duration: 0.8, ease: 'power2.inOut', delay: delay * 0.3 });
+        gsap.to(mesh.position, { y: t.y, duration: 1.0, ease: 'bounce.out', delay: delay });
+        gsap.to(mesh.rotation, { x: 0, y: boardRotationY * 0, z: 0, duration: 0.9, ease: 'power2.out', delay: delay * 0.2 });
+      });
+      gsap.to(glassMat, { opacity: 0, duration: 0.9, delay: 0.3 });
+      gsap.to(glassEdgeMat, { opacity: 0, duration: 0.7, delay: 0.2 });
+      gsap.to(boxLight, { intensity: 0, duration: 0.8, delay: 0.2 });
+
+      const topY = calcCameraY();
+      gsap.to(camera.position, {
+        x: 0, y: topY, z: 0.15,
+        duration: 1.8, ease: 'power3.inOut', delay: 0.7,
+        onUpdate: () => camera.lookAt(0, 0, 0),
+        onComplete: () => { gamePhase = 'playing'; if (onDone) onDone(); }
+      });
+    }
+
+    // ── 3-2-1 COUNTDOWN → SETTLE → PLAY ─────────────────────────────────────
+    const countdownOverlay = document.getElementById('countdown-overlay');
+    const countdownNum = document.getElementById('countdown-num');
+    const startPrompt = document.getElementById('start-prompt');
+    const timerEl = document.getElementById('timer-display');
+
+    function runCountdownThenStart() {
+      startPrompt.style.display = 'none';
+      countdownOverlay.classList.add('active');
+
+      const nums = ['3', '2', '1'];
+      const freqs = [523, 440, 659]; // C5, A4, E5 — ascending excitement
+      let idx = 0;
+
+      function showNum() {
+        if (idx >= nums.length) {
+          // Done counting — short ascending triad then settle
+          countdownOverlay.classList.remove('active');
+          playBeep(880, 0.08, 0.5, 0.00);
+          playBeep(1046, 0.08, 0.5, 0.08);
+          playBeep(1318, 0.18, 0.6, 0.16);
+          settleAndZoom(() => startGameTimer());
+          return;
+        }
+        // Play the beep for this number
+        playBeep(freqs[idx], 0.14, 0.55);
+        countdownNum.textContent = nums[idx];
+        gsap.fromTo(countdownNum,
+          { opacity: 0, scale: 1.8 },
+          {
+            opacity: 1, scale: 1.0, duration: 0.25, ease: 'power3.out',
+            onComplete: () => {
+              gsap.to(countdownNum, {
+                opacity: 0, scale: 0.7, duration: 0.45, delay: 0.4, ease: 'power2.in',
+                onComplete: () => { idx++; showNum(); }
+              });
+            }
+          }
+        );
+      }
+      showNum();
+    }
+
+    // ── TIMER ─────────────────────────────────────────────────────────────────
+    function fmtTime(s) {
+      return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    }
+
+    function startGameTimer() {
+      timeLeft = 180;
+      timerEl.style.display = 'block';
+      timerEl.textContent = fmtTime(timeLeft);
+      timerEl.classList.remove('warning');
+      timerRunning = true;
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = fmtTime(timeLeft);
+
+        if (timeLeft > 0 && timeLeft <= 3) {
+          playBeep(1050, 0.12, 0.55);
+          timerEl.classList.add('warning');
+        }
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          timerRunning = false;
+          gameOver = true;
+          gamePhase = 'over';
+          timerEl.textContent = 'TEMPO SCADUTO!';
+          playEndAlarm();
+          setTimeout(() => {
+            document.getElementById('veil').classList.add('active');
+            veilVisible = true;
+          }, 650);
+          document.getElementById('word-verifier').classList.add('visible');
+        }
+      }, 1000);
+    }
+
+    // ── AUDIO ─────────────────────────────────────────────────────────────────
+    function getACtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function playBeep(freq = 880, dur = 0.12, gain = 0.4, delay = 0) {
+      try {
+        const c = getACtx(), o = c.createOscillator(), g = c.createGain();
+        o.connect(g); g.connect(c.destination);
+        o.type = 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(gain, c.currentTime + delay);
+        g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + dur);
+        o.start(c.currentTime + delay); o.stop(c.currentTime + delay + dur + 0.01);
+      } catch (e) { }
+    }
+
+    function playEndAlarm() {
+      playBeep(880, 0.18, 0.55, 0);
+      playBeep(660, 0.18, 0.55, 0.22);
+      playBeep(440, 1.2, 0.55, 0.48);
+    }
+
+    // ── HIGHLIGHT & DFS WORD SEARCH ───────────────────────────────────────────
+    function resetDiceColors() {
+      diceMeshes.forEach(m => m.material.forEach(mat => {
+        mat.color.setHex(0xf4efe4);
+        if (mat.emissive) mat.emissive.setHex(0x000000);
+      }));
+    }
+
+    function tokenize(word) {
+      const up = word.toUpperCase().replace(/\s/g, '');
+      const tk = []; let i = 0;
+      while (i < up.length) {
+        if (up.substr(i, 2) === 'QU') { tk.push('QU'); i += 2; }
+        else { tk.push(up[i]); i++; }
+      }
+      return tk;
+    }
+
+    function findWord(word) {
+      const tk = tokenize(word);
+      if (tk.length < 2) return null;
+      const gl = gridLetters.map(l => l.toUpperCase());
+
+      function dfs(ti, ci, vis) {
+        if (ti === tk.length) return vis.slice();
+        const r = Math.floor(ci / GRID), c = ci % GRID;
+        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const nr = r + dr, nc = c + dc;
+          if (nr < 0 || nr >= GRID || nc < 0 || nc >= GRID) continue;
+          const ni = nr * GRID + nc;
+          if (vis.includes(ni)) continue;
+          if (gl[ni] === tk[ti]) { vis.push(ni); const res = dfs(ti + 1, ni, vis); if (res) return res; vis.pop(); }
+        }
+        return null;
+      }
+      for (let s = 0; s < 25; s++) if (gl[s] === tk[0]) { const p = dfs(1, s, [s]); if (p) return p; }
+      return null;
+    }
+
+    // ── POINT VALUE ───────────────────────────────────────────────────────────
+    function wordPoints(word) {
+      const tk = tokenize(word);
+      if (tk.length < 4) return null;
+      if (tk.length === 4) return 1;
+      if (tk.length === 5) return 2;
+      if (tk.length === 6) return 3;
+      if (tk.length === 7) return 5;
+      return 11;
+    }
+
+    // ── WORD INPUT LIVE BADGE ─────────────────────────────────────────────────
+    const wordInput = document.getElementById('word-input');
+    const ptBadge = document.getElementById('pt-badge');
+
+    wordInput.addEventListener('input', () => {
+      const pts = wordPoints(wordInput.value.trim());
+      if (pts !== null) {
+        ptBadge.textContent = pts + ' pt';
+        ptBadge.style.display = 'block';
+      } else {
+        ptBadge.style.display = 'none';
+      }
+    });
+
+    // ── VERIFY ────────────────────────────────────────────────────────────────
+    let resultTimer = null;
+    const resultEl = document.getElementById('word-result');
+
+    function showResult(found, word) {
+      clearTimeout(resultTimer);
+      resultEl.className = found ? 'found' : 'notfound';
+      resultEl.style.display = 'block';
+      resultEl.textContent = found
+        ? `✅ "${word.toUpperCase()}" trovata!`
+        : `❌ "${word.toUpperCase()}" non trovata`;
+      resultTimer = setTimeout(() => {
+        resultEl.style.display = 'none';
+        if (!found) resetDiceColors();
+      }, 4500);
+    }
+
+    function verifyWord() {
+      const word = wordInput.value.trim();
+      if (!word) return;
+      resetDiceColors();
+      const path = findWord(word);
+      if (path) {
+        path.forEach((idx, i) => setTimeout(() => {
+          diceMeshes[idx].material.forEach(mat => {
+            mat.color.setHex(0x00c87a);
+            if (mat.emissive) mat.emissive.setHex(0x00261a);
+          });
+          gsap.to(diceMeshes[idx].position, { y: 0.45, duration: 0.14, yoyo: true, repeat: 1, ease: 'power1.inOut' });
+        }, i * 130));
+        showResult(true, word);
+      } else {
+        showResult(false, word);
+      }
+    }
+
+    document.getElementById('btn-verify').addEventListener('click', verifyWord);
+    wordInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.stopPropagation(); verifyWord(); } });
+
+    // ── BOARD ROTATION ────────────────────────────────────────────────────────
+    document.getElementById('btn-rotate').addEventListener('click', () => {
+      if (gamePhase !== 'playing' && gamePhase !== 'over') return;
+      boardRotationY += Math.PI / 2;
+      const topY = calcCameraY();
+      const angle = boardRotationY;
+      const r = 0.15; // tiny z offset to keep lookAt stable
+      gsap.to(camera.position, {
+        x: Math.sin(angle) * r, y: topY, z: Math.cos(angle) * r,
+        duration: 0.55, ease: 'power2.inOut',
+        onUpdate: () => camera.lookAt(0, 0, 0)
+      });
+    });
+
+    // ── SHUFFLE BUTTON ────────────────────────────────────────────────────────
+    document.getElementById('btn-shuffle').addEventListener('click', resetGame);
+
+    function resetGame() {
+      clearInterval(timerInterval);
+      timerRunning = false; gameOver = false; gamePhase = 'idle';
+      boardRotationY = 0;
+      document.getElementById('veil').classList.remove('active');
+      veilVisible = false;
+      document.getElementById('word-verifier').classList.remove('visible');
+      timerEl.style.display = 'none';
+      timerEl.classList.remove('warning');
+      resultEl.style.display = 'none';
+      ptBadge.style.display = 'none';
+      wordInput.value = '';
+
+      gsap.to(glassMat, { opacity: GLASS_OPACITY, duration: 0.7 });
+      gsap.to(glassEdgeMat, { opacity: 0.55, duration: 0.7 });
+      gsap.to(boxLight, { intensity: 0.55, duration: 0.7 });
+
+      countdownOverlay.classList.remove('active');
+      resetDiceColors();
+
+      // Camera back to shake angle
+      gsap.to(camera.position, {
+        x: 0, y: 18, z: 16, duration: 0.7, ease: 'power2.inOut',
+        onUpdate: () => camera.lookAt(0, 0, 0)
+      });
+
+      shakeStart = null;
+      setTimeout(() => { startPrompt.style.display = 'flex'; }, 750);
+    }
+
+    // ── TRIGGER START (click or Enter) ────────────────────────────────────────
+    function triggerStart() {
+      // Resume AudioContext if suspended (mobile policy)
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      if (gamePhase !== 'idle') return;
+
+      rollNewLetters();
+      for (let i = 0; i < 25; i++) {
+        shakePositions[i].copy(diceMeshes[i].position);
+        shakeVelocities[i].set(
+          (Math.random() - 0.5) * 0.5,
+          Math.random() * 0.5 + 0.6,
+          (Math.random() - 0.5) * 0.5
+        );
+      }
+
+      gamePhase = 'shaking';
+      shakeStart = null;
+      runCountdownThenStart();
+    }
+
+    startPrompt.addEventListener('click', triggerStart);
+    document.addEventListener('keydown', e => {
+      if ((e.code === 'Space' || e.key === ' ') && gamePhase === 'idle') {
+        e.preventDefault();
+        triggerStart();
+        return;
+      }
+      // Spazio OPPURE Invio per toggle velo a fine partita
+      if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && gamePhase === 'over') {
+        e.preventDefault();
+        toggleVeil();
+      }
+    });
+
+    // Click / tocco sullo schermo (esclusi pulsanti e input) per toggle velo
+    function toggleVeil() {
+      veilVisible = !veilVisible;
+      document.getElementById('veil').classList.toggle('active', veilVisible);
+    }
+
+    document.getElementById('canvas-container').addEventListener('click', e => {
+      if (gamePhase === 'over') toggleVeil();
+    });
+    // Tap su mobile (touchstart) - evita doppio-fuoco con click
+    document.getElementById('canvas-container').addEventListener('touchend', e => {
+      if (gamePhase === 'over') { e.preventDefault(); toggleVeil(); }
+    }, { passive: false });
+
+    // ── FULLSCREEN ────────────────────────────────────────────────────────────
+    document.getElementById('btn-fullscreen').addEventListener('click', () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => { });
+      else document.exitFullscreen().catch(() => { });
+    });
+
+    // ── SCORE MODAL ───────────────────────────────────────────────────────────
+    document.getElementById('btn-score').addEventListener('click', () =>
+      document.getElementById('score-modal').classList.add('open'));
+    document.getElementById('close-score-btn').addEventListener('click', () =>
+      document.getElementById('score-modal').classList.remove('open'));
+    document.getElementById('score-modal').addEventListener('click', e => {
+      if (e.target.id === 'score-modal') document.getElementById('score-modal').classList.remove('open');
+    });
+
+    // ── RESIZE ────────────────────────────────────────────────────────────────
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // ── RENDER LOOP ───────────────────────────────────────────────────────────
+    function animate(ts) {
+      if (!ts) ts = performance.now();
+      requestAnimationFrame(animate);
+      if (gamePhase === 'shaking') {
+        tickShaking(ts);
+      }
+      renderer.render(scene, camera);
+    }
+
+    // ── BOOT ──────────────────────────────────────────────────────────────────
+    initGrid();
+    animate();
+  </script>
+</body>
+
+</html>
