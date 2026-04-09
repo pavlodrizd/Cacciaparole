@@ -578,18 +578,46 @@
        Cacciaparole — Premium Edition
        ═══════════════════════════════════════════════════════ */
 
-    // ── 25 DICE (Italian frequency distribution) ─────────────────────────────
+    // ── 50 DICE (Super-Pool Ottimizzato - Frequenze Italiane Avanzate) ────
     const DADI = [
-      ["A", "A", "E", "E", "G", "N"], ["E", "L", "R", "T", "T", "V"], ["A", "O", "O", "T", "T", "U"],
-      ["A", "B", "B", "C", "O", "O"], ["E", "E", "R", "T", "V", "Z"], ["C", "I", "M", "O", "T", "U"],
-      ["D", "I", "S", "T", "T", "E"], ["E", "I", "O", "S", "S", "T"], ["D", "E", "L", "R", "V", "QU"],
-      ["A", "C", "F", "O", "P", "S"], ["F", "I", "M", "N", "P", "U"], ["E", "E", "I", "N", "S", "U"],
-      ["E", "E", "G", "L", "N", "M"], ["A", "F", "F", "C", "P", "S"], ["I", "L", "N", "N", "R", "Z"],
-      ["D", "E", "I", "L", "R", "C"], ["A", "D", "E", "L", "R", "T"], ["A", "E", "O", "O", "T", "T"],
-      ["E", "I", "O", "S", "S", "T"], ["C", "E", "I", "P", "S", "T"], ["B", "C", "O", "O", "T", "U"],
-      ["E", "M", "T", "T", "I", "S"], ["A", "G", "M", "O", "R", "S"], ["A", "I", "P", "R", "S", "V"],
-      ["A", "E", "U", "E", "E", "O"]
+      // GRUPPO 1: I dadi con la "H" (Niente C o G su questi dadi!)
+      ["A", "E", "H", "I", "N", "S"], ["A", "H", "I", "L", "O", "R"], ["E", "H", "O", "P", "T", "U"],
+
+      // GRUPPO 2: I dadi con "QU" (Pronti per le vocali A, E, I, O)
+      ["A", "E", "I", "QU", "R", "T"], ["A", "I", "O", "QU", "L", "N"],
+
+      // GRUPPO 3: Lettere rare (Z, B, F, V) bilanciate con vocali forti
+      ["A", "E", "O", "Z", "C", "M"], ["E", "I", "U", "Z", "D", "R"], ["A", "I", "O", "Z", "S", "T"],
+      ["A", "E", "I", "B", "L", "S"], ["A", "O", "U", "B", "N", "T"], ["E", "I", "O", "B", "C", "R"],
+      ["A", "A", "E", "F", "M", "T"], ["E", "I", "U", "F", "N", "P"], ["A", "I", "O", "F", "R", "S"],
+      ["A", "E", "I", "V", "D", "N"], ["E", "O", "U", "V", "L", "C"], ["A", "I", "O", "V", "R", "T"],
+
+      // GRUPPO 4: Dadi ad altissima flessibilità (Sillabe comuni)
+      ["A", "E", "I", "C", "R", "S"], ["A", "E", "O", "C", "L", "T"], ["E", "I", "O", "C", "N", "P"],
+      ["A", "I", "U", "C", "M", "S"], ["A", "E", "I", "D", "R", "T"], ["A", "E", "O", "D", "L", "N"],
+      ["E", "I", "O", "D", "S", "P"], ["A", "I", "U", "G", "R", "L"], ["A", "E", "O", "G", "N", "T"],
+      ["E", "I", "O", "G", "S", "M"], ["A", "A", "E", "L", "N", "R"], ["E", "E", "I", "L", "S", "T"],
+      ["I", "I", "O", "M", "R", "C"], ["O", "O", "U", "M", "S", "T"], ["A", "E", "I", "N", "P", "R"],
+      ["A", "E", "O", "N", "S", "T"], ["E", "I", "O", "P", "L", "C"], ["A", "I", "U", "P", "R", "N"],
+
+      // GRUPPO 5: "Motori" di parole (Ricchi di consonanti R, S, T, L, N e vocali base)
+      ["A", "A", "E", "R", "S", "T"], ["E", "E", "I", "R", "L", "N"], ["I", "I", "O", "S", "T", "C"],
+      ["O", "O", "A", "S", "L", "P"], ["U", "A", "E", "T", "N", "R"], ["A", "E", "I", "T", "S", "D"],
+      ["A", "I", "O", "L", "R", "M"], ["E", "O", "U", "N", "S", "C"], ["A", "E", "E", "R", "T", "N"],
+      ["E", "I", "I", "S", "L", "R"], ["I", "O", "O", "T", "N", "S"], ["A", "O", "U", "C", "R", "T"],
+      ["A", "A", "I", "D", "L", "S"], ["E", "E", "O", "M", "N", "T"], ["A", "E", "I", "P", "S", "R"],
+      ["E", "I", "O", "L", "T", "N"], ["A", "I", "U", "R", "S", "C"]
     ];
+
+    // ── SHUFFLE function (Algoritmo di Fisher-Yates) ────────────────────────
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
 
     // ── CONSTANTS ─────────────────────────────────────────────────────────────
     const GRID = 5;
@@ -797,7 +825,7 @@
       diceMeshes = []; gridLetters = [];
       shakePositions = []; shakeVelocities = []; settledPositions = [];
 
-      const shuffled = [...DADI].sort(() => Math.random() - 0.5);
+      const shuffled = shuffleArray(DADI);
 
       for (let i = 0; i < 25; i++) {
         const die = shuffled[i];
@@ -822,7 +850,7 @@
     }
 
     function rollNewLetters() {
-      const shuffled = [...DADI].sort(() => Math.random() - 0.5);
+      const shuffled = shuffleArray(DADI);
       for (let i = 0; i < 25; i++) {
         const die = shuffled[i];
         const letter = die[Math.floor(Math.random() * die.length)];
