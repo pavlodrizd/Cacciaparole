@@ -1116,11 +1116,10 @@
     function updateSwipeDisplay() {
       const word = currentSwipeWord();
       swipeDisplayEl.textContent = word;
-      const tk = tokenize(word);
-      const pts = wordPoints(tk.length);
+      const pts = wordPoints(word.length);
       if (word.length === 0) {
         swipeDisplayEl.className = '';
-      } else if (pts > 0 || tk.length >= 4) {
+      } else if (pts > 0 || word.length >= 4) {
         swipeDisplayEl.className = 'valid';
       } else {
         swipeDisplayEl.className = '';
@@ -1192,7 +1191,7 @@
         }, success ? 700 : 400);
       };
 
-      if (tk.length < 4) {
+      if (rawWord.length < 4) {
         swipePath.forEach(i => setDiceColor(i, COLOR_INVALID));
         showPopup('notfound', 'Min. 4 lettere!');
         vibrate([80, 40, 80]);
@@ -1210,7 +1209,7 @@
       // Validate using DFS path matcher
       const validPath = findWord(rawWord);
       if (validPath) {
-        const pts = wordPoints(tk.length);
+        const pts = wordPoints(rawWord.length);
         foundWords.push({ text: rawWord, pts, crossed: false });
         updateScoreUI();
         showPopup('found', `✓ +${pts} PT`);
