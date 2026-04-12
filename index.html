@@ -280,13 +280,29 @@
       background: rgba(79, 125, 245, 0.18);
       border: 1px solid rgba(79, 125, 245, 0.4);
       border-radius: 20px;
-      padding: 5px 12px;
+      padding: 5px 8px 5px 12px;
       font-size: 13px;
       font-weight: 700;
       letter-spacing: 1px;
       color: #aaccff;
       white-space: nowrap;
       animation: chipIn 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip-del {
+      background: rgba(255, 80, 80, 0.2);
+      color: #ff8888;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      cursor: pointer;
     }
 
     @keyframes chipIn {
@@ -451,21 +467,39 @@
     }
 
     .word-toggle {
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      color: white;
-      width: 40px;
-      height: 40px;
+      background: rgba(0, 200, 122, 0.15);
+      border: 1px solid rgba(0, 200, 122, 0.4);
+      color: #00c87a;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       font-size: 18px;
+      font-weight: bold;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
 
     .word-item.crossed .word-toggle {
-      background: #ff5050;
+      background: rgba(255, 80, 80, 0.15);
+      border-color: rgba(255, 80, 80, 0.4);
+      color: #ff5050;
+    }
+
+    .review-group-header {
+      font-size: 13px;
+      font-weight: 900;
+      color: #aaccff;
+      background: rgba(79, 125, 245, 0.15);
+      border: 1px solid rgba(79, 125, 245, 0.3);
+      padding: 6px 12px;
+      border-radius: 10px;
+      margin-top: 10px;
+      margin-bottom: -2px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .review-footer {
@@ -517,6 +551,24 @@
       font-size: 16px;
       cursor: pointer;
     }
+
+    #game-over-modal {
+      position: fixed;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 18, 38, 0.98);
+      backdrop-filter: blur(20px);
+      z-index: 105;
+      display: flex;
+      flex-direction: column;
+      transition: top 0.5s cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+
+    #game-over-modal.active {
+      top: 0;
+    }
   </style>
 </head>
 
@@ -551,6 +603,11 @@
         style="margin-top: 10px; background: linear-gradient(135deg, #f5a623, #d35400);">
         🤝 Crea Sfida Multiplayer
       </button>
+
+      <button id="btn-manual-start" class="btn-large"
+        style="margin-top: 15px; background: linear-gradient(135deg, #00c87a, #009e60); display: none; font-size:18px; padding:18px; box-shadow: 0 0 30px rgba(0,200,122,0.4);">
+        Avvia la Caccia! ⚔️
+      </button>
     </div>
   </div>
 
@@ -582,16 +639,63 @@
     </div>
 
     <div class="review-footer">
-      <div class="review-score" style="flex-direction: column; align-items: stretch; gap: 5px;">
-        <div style="display:flex; justify-content:space-between;"><span>Round:</span> <span style="color:#00c87a;"
-            id="final-round-score">0</span></div>
-        <div style="display:flex; justify-content:space-between; font-size:18px; color:#aaccff;"><span>Totale:</span>
-          <span id="total-game-score-review">0</span>
+      <div id="review-confirm-section">
+        <button class="btn-large" id="btn-confirm-review"
+          style="background: linear-gradient(135deg, #00c87a, #009e60); padding: 16px; font-size: 18px;">
+          Conferma la Caccia ✓
+        </button>
+      </div>
+
+      <div id="review-final-section" style="display:none;">
+        <div class="review-score" style="flex-direction: column; align-items: stretch; gap: 5px; margin-bottom: 20px;">
+          <div style="display:flex; justify-content:center; align-items:center; flex-direction:column; gap:5px;">
+            <span id="review-round-label" style="color:#aaccff; font-size:18px;">Punti Round</span>
+            <span style="color:#00c87a; font-size:42px;" id="final-round-score">0</span>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn-outline" id="btn-reset">Azzera Tutto</button>
+          <button class="btn-outline" id="btn-finish-game" style="border-color:#f5a623; color:#f5a623;">Fine
+            Partita</button>
+          <button class="btn-next" id="btn-next-round">Prossimo ➔</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div id="game-over-modal">
+    <div
+      style="text-align:center; padding:40px 20px; display:flex; flex-direction:column; height:100%; box-sizing:border-box;">
+      <h2 style="color:#fff; font-size:28px; margin:0;">Fine Partita!</h2>
+      <p style="color:#aaccff; font-weight:600; margin-top:5px;">Punteggio Totale</p>
+      <div id="go-total-score"
+        style="font-size: 80px; color: #00c87a; font-weight: 900; margin: 30px 0; text-shadow: 0 0 30px rgba(0,200,122,0.6);">
+        0</div>
+
+      <button id="btn-show-go-words" class="btn-outline"
+        style="width:100%; margin-bottom: 20px; margin-top:auto; font-size:17px; border-color:#4f7df5; color:#aaccff; font-weight:bold;">🔍
+        Mostra Tutte le Parole</button>
+
       <div class="action-buttons">
-        <button class="btn-outline" id="btn-reset">Azzera Tutto</button>
-        <button class="btn-next" id="btn-next-round">Prossimo Round ➔</button>
+        <button class="btn-next" id="btn-restart-game" style="font-size:18px; padding:18px; width:100%;">Nuova
+          Partita</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="master-review-modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:200; backdrop-filter:blur(10px);">
+    <div
+      style="position:absolute; top:20px; bottom:20px; left:20px; right:20px; background:#0b1226; border-radius:15px; border:1px solid rgba(79,125,245,0.4); display:flex; flex-direction:column; overflow:hidden;">
+      <div
+        style="padding:15px; display:flex; justify-content:space-between; align-items:center; background:rgba(79,125,245,0.15); border-bottom:1px solid rgba(79,125,245,0.3);">
+        <h3 style="margin:0; color:#fff;">Tutte le Parole</h3>
+        <button id="btn-close-master-review"
+          style="background:transparent; border:none; color:#ff5050; font-size:24px; font-weight:bold; cursor:pointer;">✕</button>
+      </div>
+      <div class="review-list" id="master-review-list"
+        style="flex:1; overflow-y:auto; padding:15px; margin:0; border:none;">
       </div>
     </div>
   </div>
@@ -659,20 +763,16 @@
     }
 
     let currentMatchID = generateMatchID();
-    let scheduledStartTime = null;
-    let waitingInterval = null;
+    let shouldStartLobbyOnLoad = false;
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('match')) {
       currentMatchID = urlParams.get('match');
-      if (urlParams.has('start')) {
-        scheduledStartTime = parseInt(urlParams.get('start'), 10);
-        avviaLobbyAttesa();
-      }
+      shouldStartLobbyOnLoad = true;
     }
 
-    const seedPart = cyrb128(currentMatchID);
-    const seededRandom = sfc32(seedPart[0], seedPart[1], seedPart[2], seedPart[3]);
+    let seedPart = cyrb128(currentMatchID);
+    let seededRandom = sfc32(seedPart[0], seedPart[1], seedPart[2], seedPart[3]);
 
     function shuffleArray(array) {
       const arr = [...array];
@@ -687,14 +787,12 @@
     document.getElementById('btn-challenge').addEventListener('click', (e) => {
       e.stopPropagation();
       const nuovoMatchID = generateMatchID();
-      const tempoAttesa = 30000; // 30 sec per mandare il link
-      const startTime = Date.now() + tempoAttesa;
 
       const urlBase = window.location.protocol + "//" + window.location.host + window.location.pathname;
-      const linkSfida = `${urlBase}?match=${nuovoMatchID}&start=${startTime}`;
+      const linkSfida = `${urlBase}?match=${nuovoMatchID}`;
 
       navigator.clipboard.writeText(linkSfida).then(() => {
-        alert("Link copiato! Invialo al tuo avversario. La partita inizierà in 30 secondi.");
+        alert("Link copiato! Invialo al tuo avversario. Sincronizzatevi a voce e cliccate 'Avvia la Caccia!'");
         window.location.href = linkSfida;
       }).catch(() => { alert("Copia questo link: " + linkSfida); });
     });
@@ -704,23 +802,38 @@
       triggerStart();
     });
 
+    document.getElementById('btn-manual-start').addEventListener('click', (e) => {
+      e.stopPropagation();
+      triggerStart();
+    });
+
     function avviaLobbyAttesa() {
+      gsap.to(camera.position, { x: 0, y: 18, z: 16, duration: 1.5, ease: 'power2.inOut', onUpdate: () => camera.lookAt(0, 0, 0) });
+      gsap.to(glassMat, { opacity: GLASS_OPACITY, duration: 1.5 });
+
       document.getElementById('btn-challenge').style.display = 'none';
       document.getElementById('btn-start-solo').style.display = 'none';
+
+      document.getElementById('timer-display').style.display = 'none';
+      document.getElementById('timer-display').classList.remove('warning');
+      document.getElementById('game-stats').classList.remove('visible');
+
       const subPrompt = document.getElementById('lobby-status');
+      subPrompt.innerHTML = "Sincronizzatevi a voce e schiacciate play!";
 
-      waitingInterval = setInterval(() => {
-        const now = Date.now();
-        const diff = scheduledStartTime - now;
-
-        if (diff <= 0) {
-          clearInterval(waitingInterval);
-          subPrompt.innerHTML = "Avvio in corso!";
-          triggerStart();
-        } else {
-          subPrompt.innerHTML = `Sincronizzazione in <strong style="color:#ff5050; font-size:1.3em;">${Math.ceil(diff / 1000)}</strong>s...<br><span style="font-size:10px;">(Tocca lo schermo per audio)</span>`;
+      if (gamePhase === 'idle') {
+        if (diceMeshes.length > 0) { // Wait for initGrid
+          rollNewLetters();
+          for (let i = 0; i < 25; i++) {
+            shakePositions[i].copy(settledPositions[i]);
+            shakePositions[i].y = BY_LO + Math.random() * (BY_HI - BY_LO);
+            shakeVelocities[i].set((Math.random() - 0.5) * 0.8, Math.random() * 0.8 + 0.5, (Math.random() - 0.5) * 0.8);
+          }
+          gamePhase = 'shaking';
         }
-      }, 200);
+      }
+
+      document.getElementById('btn-manual-start').style.display = 'block';
     }
 
     // ── THREE.JS SETUP ────────────────────────────────────────────────────────
@@ -755,7 +868,7 @@
       const fovRad = camera.fov * Math.PI / 180;
       const gridExtent = (GRID - 1) * GAP / 2 + DSIZ;
       const aspect = window.innerWidth / window.innerHeight;
-      return Math.max(gridExtent / Math.tan(fovRad / 2) * 1.3, (gridExtent / aspect) / Math.tan(fovRad / 2) * 1.2);
+      return Math.max(gridExtent / Math.tan(fovRad / 2) * 1.25, (gridExtent / aspect) / Math.tan(fovRad / 2) * 1.1);
     }
 
     scene.add(new THREE.AmbientLight(0xaac0ff, 0.65));
@@ -869,16 +982,25 @@
     // ── GAME LOGIC ────────────────────────────────────────────────────────────
     function triggerStart() {
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-      if (gamePhase !== 'idle') return;
-      document.getElementById('start-prompt').style.display = 'none';
 
-      rollNewLetters();
-      for (let i = 0; i < 25; i++) {
-        shakePositions[i].copy(diceMeshes[i].position);
-        shakeVelocities[i].set((Math.random() - 0.5) * 0.8, Math.random() * 0.8 + 0.5, (Math.random() - 0.5) * 0.8);
+      document.getElementById('timer-display').style.display = 'none';
+      document.getElementById('game-stats').classList.remove('visible');
+
+      if (gamePhase === 'idle') {
+        if (diceMeshes.length === 0) initGrid();
+        rollNewLetters();
+        for (let i = 0; i < 25; i++) {
+          shakePositions[i].copy(settledPositions[i]);
+          shakePositions[i].y = BY_LO + Math.random() * (BY_HI - BY_LO);
+          shakeVelocities[i].set((Math.random() - 0.5) * 0.8, Math.random() * 0.8 + 0.5, (Math.random() - 0.5) * 0.8);
+        }
+        gamePhase = 'shaking';
       }
 
-      gamePhase = 'shaking';
+      document.getElementById('start-prompt').style.display = 'none';
+
+      let btnManual = document.getElementById('btn-manual-start');
+      if (btnManual) btnManual.style.display = 'none';
 
       const countOverlay = document.getElementById('countdown-overlay');
       const countNum = document.getElementById('countdown-num');
@@ -914,6 +1036,7 @@
       updateScoreUI();
 
       const durata = 180;
+      timerEl.textContent = String(Math.floor(durata / 60)).padStart(2, '0') + ':' + String(durata % 60).padStart(2, '0');
       const endT = Date.now() + (durata * 1000);
 
       timerInterval = setInterval(() => {
@@ -1092,7 +1215,17 @@
       raycaster.setFromCamera(pointerNDC, camera);
       const hits = raycaster.intersectObjects(diceMeshes);
       if (!hits.length) return -1;
-      return diceMeshes.indexOf(hits[0].object);
+
+      const hit = hits[0];
+      const dx = hit.point.x - hit.object.position.x;
+      const dz = hit.point.z - hit.object.position.z;
+      const dist2D = Math.sqrt(dx * dx + dz * dz);
+
+      // La hitbox logica diventa un cerchio di raggio 0.42 (rispetto a mezza grandezza del dado 0.525).
+      // Questo "taglia" gli angoli e i bordi, ignorando i tocchi accidentali!
+      if (dist2D > 0.42) return -1;
+
+      return diceMeshes.indexOf(hit.object);
     }
 
     function areDiceAdjacent(idxA, idxB) {
@@ -1250,71 +1383,206 @@
       resTimer = setTimeout(() => resPopup.className = '', 1600);
     }
 
+    document.getElementById('found-words-row').addEventListener('click', (e) => {
+      const trg = e.target.closest('.chip-del');
+      if (trg) {
+        e.stopPropagation();
+        const idx = parseInt(trg.dataset.idx, 10);
+        foundWords.splice(idx, 1);
+        updateScoreUI();
+        vibrate(30);
+      }
+    });
+
     function updateScoreUI() {
       const pts = foundWords.filter(w => !w.crossed).reduce((sum, w) => sum + w.pts, 0);
       document.getElementById('words-found-counter').textContent = `Parole: ${foundWords.length}`;
       document.getElementById('current-pts-counter').textContent = `Punti: ${pts}`;
-      // Add a chip for the newest word
+      // Rebuild the chip list
       const row = document.getElementById('found-words-row');
-      const w = foundWords[foundWords.length - 1];
-      if (!w) return;
-      const chip = document.createElement('span');
-      chip.className = 'found-chip';
-      chip.textContent = `${w.text} +${w.pts}`;
-      row.appendChild(chip);
+      row.innerHTML = '';
+      foundWords.forEach((w, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'found-chip';
+        chip.innerHTML = `<span>${w.text} <small style="opacity:0.75">+${w.pts}</small></span> <div class="chip-del" data-idx="${index}">✖</div>`;
+        row.appendChild(chip);
+      });
       row.scrollLeft = row.scrollWidth;
     }
 
     // ── REVIEW MODAL LOGIC ────────────────────────────────────────────────────
+    document.getElementById('btn-confirm-review').addEventListener('click', () => {
+      document.getElementById('review-confirm-section').style.display = 'none';
+      document.getElementById('review-final-section').style.display = 'block';
+      calcFinalRoundScore();
+      vibrate([50, 50, 100]);
+    });
+
     function showReviewModal() {
       const modal = document.getElementById('review-modal');
       const list = document.getElementById('review-list');
       list.innerHTML = '';
 
-      // Ordina parole: prima le più lunghe, poi alfabetico
-      foundWords.sort((a, b) => b.pts - a.pts || a.text.localeCompare(b.text));
+      document.getElementById('review-confirm-section').style.display = 'block';
+      document.getElementById('review-final-section').style.display = 'none';
 
-      foundWords.forEach((w, index) => {
-        const div = document.createElement('div');
-        div.className = 'word-item';
-        div.innerHTML = `
-          <div class="word-info">
-            <span class="word-pts">${w.pts}</span>
-            <span class="word-text">${w.text}</span>
-          </div>
-          <button class="word-toggle">${w.crossed ? '❌' : '👁️'}</button>
-        `;
+      const roundLabelEl = document.getElementById('review-round-label');
+      if (roundLabelEl) roundLabelEl.textContent = `Round ${currentRound}:`;
 
-        div.querySelector('.word-toggle').addEventListener('click', () => {
-          w.crossed = !w.crossed;
-          div.className = w.crossed ? 'word-item crossed' : 'word-item';
-          div.querySelector('.word-toggle').textContent = w.crossed ? '❌' : '👁️';
-          vibrate(50);
-          calcFinalRoundScore();
-        });
-
-        list.appendChild(div);
+      // Raggruppa per punti
+      const groups = { 11: [], 5: [], 3: [], 2: [], 1: [] };
+      foundWords.sort((a, b) => a.text.localeCompare(b.text)); // Ordina alfabeticamente
+      foundWords.forEach(w => {
+        if (groups[w.pts]) groups[w.pts].push(w);
       });
 
-      calcFinalRoundScore();
+      const ptsLabels = {
+        11: '11 Punti (8+ lettere)',
+        5: '5 Punti (7 lettere)',
+        3: '3 Punti (6 lettere)',
+        2: '2 Punti (5 lettere)',
+        1: '1 Punto (4 lettere)'
+      };
+
+      [11, 5, 3, 2, 1].forEach(ptsVal => {
+        if (groups[ptsVal] && groups[ptsVal].length > 0) {
+          const header = document.createElement('div');
+          header.className = 'review-group-header';
+          header.textContent = ptsLabels[ptsVal];
+          list.appendChild(header);
+
+          groups[ptsVal].sort((a, b) => a.text.localeCompare(b.text)).forEach((w, index) => {
+            const div = document.createElement('div');
+            div.className = w.crossed ? 'word-item crossed' : 'word-item';
+            div.innerHTML = `
+              <div class="word-info">
+                <span class="word-pts">${w.pts}</span>
+                <span class="word-text">${w.text}</span>
+              </div>
+              <button class="word-toggle">${w.crossed ? '✕' : '✓'}</button>
+            `;
+
+            div.querySelector('.word-toggle').addEventListener('click', () => {
+              w.crossed = !w.crossed;
+              div.className = w.crossed ? 'word-item crossed' : 'word-item';
+              div.querySelector('.word-toggle').textContent = w.crossed ? '✕' : '✓';
+              vibrate(50);
+              calcFinalRoundScore();
+            });
+
+            list.appendChild(div);
+          });
+        }
+      });
+
       modal.classList.add('active');
     }
 
     function calcFinalRoundScore() {
       const score = foundWords.filter(w => !w.crossed).reduce((s, w) => s + w.pts, 0);
       document.getElementById('final-round-score').textContent = score;
-      const elTotal = document.getElementById('total-game-score-review');
-      if (elTotal) elTotal.textContent = totalGameScore + score;
       return score;
     }
 
-    // ── NEXT ROUND & RESET DETERMINISTICI ─────────────────────────────────────
+    function saveRoundData() {
+      const validThisRound = foundWords.filter(w => !w.crossed).map(w => ({ ...w, round: currentRound }));
+      let masterLog = JSON.parse(sessionStorage.getItem('cp_master_words') || '[]');
+      masterLog = masterLog.concat(validThisRound);
+      sessionStorage.setItem('cp_master_words', JSON.stringify(masterLog));
+      return masterLog;
+    }
+
+    // EVENTI FINE GIOCO
+    document.getElementById('btn-finish-game').addEventListener('click', () => {
+      document.getElementById('review-modal').classList.remove('active');
+      const masterLog = saveRoundData();
+
+      const goModal = document.getElementById('game-over-modal');
+      const scoreEl = document.getElementById('go-total-score');
+
+      let grandTotal = masterLog.reduce((s, w) => s + w.pts, 0);
+      scoreEl.textContent = grandTotal;
+      goModal.classList.add('active');
+
+      // Esplosione Particelle Massiccia
+      for (let i = 0; i < 40; i++) setTimeout(() => spawnParticles(window.innerWidth / 2, window.innerHeight / 2), i * 30);
+
+      const list = document.getElementById('master-review-list');
+      list.innerHTML = '';
+
+      const ptsLabels = { 11: '11 Punti', 5: '5 Punti', 3: '3 Punti', 2: '2 Punti', 1: '1 Punto' };
+      const maxRound = Math.max(...masterLog.map(w => w.round || 1));
+
+      for (let r = 1; r <= maxRound; r++) {
+        const wordsInRound = masterLog.filter(w => (w.round || 1) === r);
+        if (wordsInRound.length === 0) continue;
+
+        const rHeader = document.createElement('div');
+        rHeader.style.cssText = "font-size:16px; font-weight:900; color:#fff; text-align:center; padding:10px; margin-top:20px; border-bottom:1px solid rgba(255,255,255,0.1);";
+        rHeader.textContent = `ROUND ${r}`;
+        list.appendChild(rHeader);
+
+        const groups = {};
+        wordsInRound.forEach(w => {
+          if (!groups[w.pts]) groups[w.pts] = [];
+          groups[w.pts].push(w);
+        });
+
+        [11, 5, 3, 2, 1].forEach(ptsVal => {
+          if (groups[ptsVal] && groups[ptsVal].length > 0) {
+            const pHeader = document.createElement('div');
+            pHeader.className = 'review-group-header';
+            pHeader.textContent = ptsLabels[ptsVal];
+            list.appendChild(pHeader);
+
+            groups[ptsVal].sort((a, b) => a.text.localeCompare(b.text)).forEach(w => {
+              const div = document.createElement('div');
+              div.className = w.crossed ? 'word-item crossed' : 'word-item';
+              div.innerHTML = `
+                  <div class="word-info">
+                    <span class="word-pts">${w.pts}</span>
+                    <span class="word-text">${w.text}</span>
+                  </div>
+                  <button class="word-toggle">${w.crossed ? '✕' : '✓'}</button>
+                 `;
+
+              div.querySelector('.word-toggle').addEventListener('click', () => {
+                w.crossed = !w.crossed;
+                div.className = w.crossed ? 'word-item crossed' : 'word-item';
+                div.querySelector('.word-toggle').textContent = w.crossed ? '✕' : '✓';
+                sessionStorage.setItem('cp_master_words', JSON.stringify(masterLog));
+                vibrate(50);
+                scoreEl.textContent = masterLog.filter(mw => !mw.crossed).reduce((s, mw) => s + mw.pts, 0);
+              });
+              list.appendChild(div);
+            });
+          }
+        });
+      }
+    });
+
+    document.getElementById('btn-show-go-words').addEventListener('click', () => {
+      document.getElementById('master-review-modal').style.display = 'block';
+    });
+
+    document.getElementById('btn-close-master-review').addEventListener('click', () => {
+      document.getElementById('master-review-modal').style.display = 'none';
+    });
+
+    document.getElementById('btn-restart-game').addEventListener('click', () => {
+      sessionStorage.clear();
+      window.location.href = window.location.pathname;
+    });
+
+    // ── NEXT ROUND NATIVO SENZA RELOAD ─────────────────────────────────────
     let isNavigating = false;
     document.getElementById('btn-next-round').addEventListener('click', (e) => {
       if (isNavigating) return;
       isNavigating = true;
       e.target.textContent = "Attendere...";
       e.target.style.opacity = "0.7";
+
+      saveRoundData();
 
       const roundScore = calcFinalRoundScore();
       totalGameScore += roundScore;
@@ -1323,15 +1591,31 @@
       sessionStorage.setItem('cp_total_score', totalGameScore);
       sessionStorage.setItem('cp_round', currentRound);
 
-      // Genera il link per il prossimo round deterministicamente!
-      // Se entrambi i giocatori cliccano "Prossimo", genereranno lo stesso URL.
       const nextSeedStr = currentMatchID + "_round_" + currentRound;
       const nextMatchID = Math.abs(cyrb128(nextSeedStr)[0]).toString(36);
 
-      const startTime = Date.now() + 20000; // 20 secondi per sincronizzarsi al round successivo
-
       const urlBase = window.location.protocol + "//" + window.location.host + window.location.pathname;
-      window.location.href = `${urlBase}?match=${nextMatchID}&start=${startTime}`;
+      window.history.pushState({}, '', `${urlBase}?match=${nextMatchID}`);
+
+      document.getElementById('review-modal').classList.remove('active');
+      document.getElementById('game-over-modal').classList.remove('active');
+
+      foundWords = [];
+      updateScoreUI();
+
+      currentMatchID = nextMatchID;
+
+      seedPart = cyrb128(currentMatchID);
+      seededRandom = sfc32(seedPart[0], seedPart[1], seedPart[2], seedPart[3]);
+
+      isNavigating = false;
+      document.getElementById('btn-next-round').innerHTML = "Prossimo ➔";
+      document.getElementById('btn-next-round').style.opacity = "1";
+      document.getElementById('round-badge').innerText = `Round ${currentRound}`;
+
+      gamePhase = 'idle';
+      document.getElementById('start-prompt').style.display = 'flex';
+      avviaLobbyAttesa();
     });
 
     document.getElementById('btn-reset').addEventListener('click', () => {
@@ -1358,6 +1642,9 @@
     }
 
     initGrid();
+    if (shouldStartLobbyOnLoad) {
+      avviaLobbyAttesa();
+    }
     animate();
   </script>
 </body>
