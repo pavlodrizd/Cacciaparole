@@ -13,12 +13,7 @@ Cacciaparole è una reinterpretazione moderna e interattiva del classico gioco d
 
 ## Come giocare 🏁
 
-1. Avvia la web app navigando alla locazione del file `index.html`. 
-2. Mentre i dadi stanno saltando all'interno della teca di vetro, premi **SPAZIO** o **TOCCA LO SCHERMO** per mescolarli definitivamente. Dopo un timer di `3-2-1`, inizierà la sfida!
-3. Hai a disposizione **3 minuti di tempo**. Scrivi le parole sulla barra di input e premi spazio/invio per fare assegnare i punti, un feedback ti mostrerà i dadi verdi in plancia se valida!
-4. Clicca sul pulsante Punti in basso a destra per consultare il foglio delle regole standard dei punteggi.
-5. Usa il pulsante Ruota per cambiare angolazione di scarto della plancia.
-6. A tempo scaduto potrai premere barra spaziatrice per sbirciare di sfuggita dietro la censura della plancia. Punteggio migliore vince!
+- https://pavlodrizd.github.io/Cacciaparole/
 
 ## Tecnologie e Stack 💻
 Scritto interamente in **HTML**, **CSS**, e **JavaScript Vanilla**.  
